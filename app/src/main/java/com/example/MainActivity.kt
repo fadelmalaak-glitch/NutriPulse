@@ -1,6 +1,7 @@
 package com.example
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -71,6 +72,7 @@ import com.example.util.SignUpPreferences
 import com.example.util.configureAppCheck
 import com.example.util.signOut
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -79,8 +81,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // STEP 1: Configure App Check with launch intent before any UI or Firebase operations
-        configureAppCheck(this, intent)
+        // initializeApp returns null when this build has no Firebase configuration.
+        // Do not enter navigation: its default Firebase.auth argument would throw.
+        val firebaseReady = try {
+            FirebaseApp.getApps(this).any { it.name == FirebaseApp.DEFAULT_APP_NAME } ||
+                FirebaseApp.initializeApp(this) != null
+        } catch (error: IllegalStateException) {
+            Log.e("NutriPulseStartup", "Firebase initialization failed", error)
+            false
+        }
+        if (firebaseReady) {
+            configureAppCheck(this, intent)
+        }
 
         enableEdgeToEdge()
 
@@ -94,12 +106,39 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppNavigation(
-                        isDarkTheme = useDarkTheme,
-                        onToggleDarkTheme = { darkThemeOverride = it }
-                    )
+                    if (firebaseReady) {
+                        AppNavigation(
+                            isDarkTheme = useDarkTheme,
+                            onToggleDarkTheme = { darkThemeOverride = it }
+                        )
+                    } else {
+                        AccountSetupRequiredScreen()
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AccountSetupRequiredScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize().padding(24.dp).testTag("account_setup_required"),
+        contentAlignment = Alignment.Center
+    ) {
+        Column {
+            Text("NutriPulse", style = MaterialTheme.typography.headlineLarge)
+            Text(
+                "Account setup needed",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(top = 16.dp)
+            )
+            Text(
+                "This version is missing the account connection needed to sign in. " +
+                    "Please install an updated version with account setup completed.",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 12.dp)
+            )
         }
     }
 }
