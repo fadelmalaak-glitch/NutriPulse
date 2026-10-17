@@ -14,7 +14,6 @@ import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.NoCredentialException
-import com.example.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -119,7 +118,16 @@ class FirebaseAuthService(
      */
     fun getServerClientId(context: Context): Result<String> {
         return try {
-            val clientId = context.getString(R.string.default_web_client_id).trim()
+            // This resource is generated only when Firebase configuration is supplied.
+            val clientIdResource = context.resources.getIdentifier(
+                "default_web_client_id", "string", context.packageName
+            )
+            if (clientIdResource == 0) {
+                return Result.failure(IllegalStateException(
+                    "Google Sign-In configuration missing: add your Firebase google-services.json"
+                ))
+            }
+            val clientId = context.getString(clientIdResource).trim()
             if (clientId.isBlank()) {
                 Result.failure(IllegalStateException("Google Sign-In configuration missing: default_web_client_id is empty"))
             } else {
