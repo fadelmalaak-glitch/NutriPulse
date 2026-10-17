@@ -5,6 +5,7 @@ import com.example.R
 import com.example.data.model.GroceryItem
 import com.example.data.model.MealEntry
 import com.example.data.model.MealPlanItem
+import com.example.data.model.NutritionCalculator
 import com.example.data.model.UserProfile
 import com.example.data.model.WaterLog
 import com.example.data.model.WeightLog
@@ -83,6 +84,54 @@ class NutriPulseRepository(
                 docRef.set(profile.toCreateMap(uid)).await()
             }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            handleFirestoreError(e, OperationType.WRITE, docRef.path)
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Ensures a valid [UserProfile] document exists in Firestore for the signed-in Google user.
+     * If the user is signing up for the first time, creates their personalized profile using
+     * their Google display name and selected onboarding preferences.
+     */
+    suspend fun ensureUserProfileExists(
+        displayName: String = "",
+        goalType: String = "lose",
+        dietaryPreference: String = "High Protein",
+        activityLevel: String = "moderate"
+    ): Result<UserProfile> {
+        val uid = requireUserId()
+        val docRef = db.collection("users").document(uid)
+        return try {
+            val existingSnap = docRef.get().await()
+            if (existingSnap.exists()) {
+                val existingProfile = existingSnap.toObject(
+                    UserProfile::class.java,
+                    DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
+                ) ?: UserProfile(userId = uid)
+                Result.success(existingProfile)
+            } else {
+                val safeName = displayName.trim()
+                    .ifBlank { auth.currentUser?.displayName?.trim().orEmpty() }
+                    .ifBlank { auth.currentUser?.email?.substringBefore("@")?.trim().orEmpty() }
+                    .ifBlank { "NutriPulse Member" }
+                    .take(100)
+                val calculated = NutritionCalculator.calculatePersonalizedGoals(
+                    age = 30,
+                    gender = "female",
+                    heightCm = 168.0,
+                    currentWeightKg = 68.0,
+                    targetWeightKg = 62.0,
+                    activityLevel = activityLevel,
+                    goalType = goalType,
+                    dietaryPreference = dietaryPreference
+                ).copy(userId = uid, displayName = safeName)
+                docRef.set(calculated.toCreateMap(uid)).await()
+                Result.success(calculated)
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

@@ -493,6 +493,29 @@ class NutriPulseViewModel(
         }
     }
 
+    fun initializeAccountProfile(
+        displayName: String,
+        goalType: String = "lose",
+        dietaryPreference: String = "High Protein",
+        activityLevel: String = "moderate",
+        isSignUp: Boolean = false
+    ) {
+        viewModelScope.launch {
+            val result = repository.ensureUserProfileExists(
+                displayName = displayName,
+                goalType = goalType,
+                dietaryPreference = dietaryPreference,
+                activityLevel = activityLevel
+            )
+            if (result.isSuccess && isSignUp) {
+                val created = result.getOrNull()
+                if (created != null) {
+                    _statusBanner.value = "Welcome to NutriPulse, ${created.displayName}! Daily target set to ${created.dailyCalorieGoal} kcal."
+                }
+            }
+        }
+    }
+
     // --- AI Meal Planner & Grocery List Generation ---
     private val _mealPlanGenerationState = MutableStateFlow<UiState<String>>(UiState.Idle)
     val mealPlanGenerationState: StateFlow<UiState<String>> = _mealPlanGenerationState.asStateFlow()

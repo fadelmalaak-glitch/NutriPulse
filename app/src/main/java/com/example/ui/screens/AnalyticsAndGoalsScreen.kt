@@ -79,6 +79,7 @@ import kotlin.math.roundToInt
 @Composable
 fun AnalyticsAndGoalsScreen(
     profile: UserProfile,
+    accountEmail: String? = null,
     meals: List<MealEntry>,
     weightLogs: List<WeightLog>,
     isDarkTheme: Boolean,
@@ -438,13 +439,20 @@ fun AnalyticsAndGoalsScreen(
                             Icon(Icons.Default.VerifiedUser, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Privacy Policy & Google Play Readiness",
+                                text = "Google Account, Privacy & Play Store Readiness",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Text(
-                            text = "• Data Isolation: All user profiles, meals, hydration logs, weight records, and meal plans are stored under /users/{uid} in Cloud Firestore with zero-trust ABAC security rules.\n" +
+                            text = "Signed in as: ${profile.displayName}" +
+                                (if (!accountEmail.isNullOrBlank()) " ($accountEmail)" else ""),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.testTag("signed_in_account_label")
+                        )
+                        Text(
+                            text = "• Data Isolation: All user profiles, meals, hydration logs, weight records, and meal plans are stored under /users/${profile.userId} in Cloud Firestore with zero-trust ABAC security rules.\n" +
                                 "• Zero Broad Storage Permissions: Uses Android Photo Picker (PickVisualMedia) for compliant photo selection.\n" +
                                 "• AI Transparency: Food macro estimates include confidence scores and editable ingredient breakdowns.",
                             style = MaterialTheme.typography.bodySmall,

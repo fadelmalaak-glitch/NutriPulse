@@ -61,9 +61,13 @@ import com.example.ui.screens.CoachScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.PlannerAndGroceryScreen
 import com.example.ui.theme.NutriPulseTheme
+import androidx.compose.runtime.LaunchedEffect
 import com.example.ui.viewmodel.NutriPulseViewModel
 import com.example.ui.viewmodel.UiState
-import com.example.util.authStateFlow
+import com.example.util.AuthAccountInfo
+import com.example.util.AuthMode
+import com.example.util.FirebaseAuthService
+import com.example.util.SignUpPreferences
 import com.example.util.configureAppCheck
 import com.example.util.signOut
 import com.google.firebase.Firebase
@@ -106,18 +110,34 @@ fun AppNavigation(
     isDarkTheme: Boolean = false,
     onToggleDarkTheme: (Boolean) -> Unit = {}
 ) {
-    val currentUser by auth.authStateFlow().collectAsStateWithLifecycle(initialValue = auth.currentUser)
+    val authService = remember(auth) { FirebaseAuthService(auth) }
+    val currentUser by authService.observeAuthState().collectAsStateWithLifecycle(initialValue = auth.currentUser)
+    var lastAuthAccountInfo by remember { mutableStateOf<AuthAccountInfo?>(null) }
+    var lastSignUpPreferences by remember { mutableStateOf(SignUpPreferences()) }
     val user = currentUser
 
     if (user == null) {
         AuthScreen(
-            onAuthSuccess = { /* AuthStateListener automatically transitions to MainFeatureScreen */ }
+            authService = authService,
+            onAuthSuccess = { accountInfo, signUpPrefs ->
+                lastAuthAccountInfo = accountInfo
+                lastSignUpPreferences = signUpPrefs
+            }
         )
     } else {
+        val displayName = lastAuthAccountInfo?.displayName
+            ?: user.displayName?.takeIf { it.isNotBlank() }
+            ?: user.email?.substringBefore("@")?.takeIf { it.isNotBlank() }
+            ?: "NutriPulse Member"
         MainFeatureScreen(
             currentUserId = user.uid,
+            accountDisplayName = displayName,
+            accountEmail = lastAuthAccountInfo?.email ?: user.email,
+            signUpPreferences = lastSignUpPreferences,
+            isSignUpSession = lastAuthAccountInfo?.authMode == AuthMode.SIGN_UP || lastAuthAccountInfo?.isNewUser == true,
             isDarkTheme = isDarkTheme,
-            onToggleDarkTheme = onToggleDarkTheme
+            onToggleDarkTheme = onToggleDarkTheme,
+            authService = authService
         )
     }
 }
@@ -133,8 +153,13 @@ private enum class NutriDestination(val label: String, val icon: ImageVector, va
 @Composable
 fun MainFeatureScreen(
     currentUserId: String,
+    accountDisplayName: String = "NutriPulse Member",
+    accountEmail: String? = null,
+    signUpPreferences: SignUpPreferences = SignUpPreferences(),
+    isSignUpSession: Boolean = false,
     isDarkTheme: Boolean,
-    onToggleDarkTheme: (Boolean) -> Unit
+    onToggleDarkTheme: (Boolean) -> Unit,
+    authService: FirebaseAuthService = remember { FirebaseAuthService() }
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -153,6 +178,16 @@ fun MainFeatureScreen(
             }
         }
     )
+
+    LaunchedEffect(currentUserId, accountDisplayName, signUpPreferences, isSignUpSession) {
+        viewModel.initializeAccountProfile(
+            displayName = accountDisplayName,
+            goalType = signUpPreferences.goalType,
+            dietaryPreference = signUpPreferences.dietaryPreference,
+            activityLevel = signUpPreferences.activityLevel,
+            isSignUp = isSignUpSession
+        )
+    }
 
     val selectedDateKey by viewModel.selectedDateKey.collectAsStateWithLifecycle()
     val summary by viewModel.dailySummary.collectAsStateWithLifecycle()
@@ -308,6 +343,7 @@ fun MainFeatureScreen(
 
                             NutriDestination.ANALYTICS -> AnalyticsAndGoalsScreen(
                                 profile = profile,
+                                accountEmail = accountEmail,
                                 meals = meals,
                                 weightLogs = weightLogs,
                                 isDarkTheme = isDarkTheme,
@@ -321,7 +357,8 @@ fun MainFeatureScreen(
                                         context = context,
                                         credentialManager = credentialManager,
                                         onSignOutComplete = {},
-                                        scope = coroutineScope
+                                        scope = coroutineScope,
+                                        authService = authService
                                     )
                                 }
                             )

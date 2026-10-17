@@ -143,6 +143,42 @@ class NutriPulseRepositoryRuleTest : FirestoreEmulatorTestBase() {
         assertTrue(groceries.any { it.name == "Wild Alaskan Salmon" })
     }
 
+    @Test
+    fun ensureUserProfileExists_googleSignUpAndSubsequentLogin_provisionsAndPreservesProfile() = runBlocking {
+        val uid = signInTestUser(ALICE_EMAIL)
+        val repository = NutriPulseRepository(firestore, auth)
+
+        val signUpProfileResult = withTimeout(DEFAULT_TIMEOUT_MS) {
+            repository.ensureUserProfileExists(
+                displayName = "Alice SignUp",
+                goalType = "recomp",
+                dietaryPreference = "Mediterranean",
+                activityLevel = "active"
+            )
+        }
+        assertTrue("Sign-up profile initialization should succeed: ${signUpProfileResult.exceptionOrNull()}", signUpProfileResult.isSuccess)
+        val created = signUpProfileResult.getOrNull()
+        assertNotNull(created)
+        assertEquals("Alice SignUp", created?.displayName)
+        assertEquals("recomp", created?.goalType)
+        assertEquals("Mediterranean", created?.dietaryPreference)
+
+        // Subsequent login should preserve existing profile without overwriting
+        val subsequentLoginResult = withTimeout(DEFAULT_TIMEOUT_MS) {
+            repository.ensureUserProfileExists(
+                displayName = "Different Name",
+                goalType = "lose",
+                dietaryPreference = "Low Carb",
+                activityLevel = "sedentary"
+            )
+        }
+        assertTrue(subsequentLoginResult.isSuccess)
+        val preserved = subsequentLoginResult.getOrNull()
+        assertEquals("Alice SignUp", preserved?.displayName)
+        assertEquals("recomp", preserved?.goalType)
+        assertEquals(uid, preserved?.userId)
+    }
+
     private companion object {
         const val ALICE_EMAIL = "alice@nutripulse.test"
         const val BOB_EMAIL = "bob@nutripulse.test"
