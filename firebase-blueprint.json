@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Personalized user profile and calculated daily calorie and macronutrient targets.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated user UID" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "age": { "type": "integer", "description": "Age in years" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "heightCm": { "type": "number", "description": "Height in centimeters" },
+        "currentWeightKg": { "type": "number", "description": "Current weight in kilograms" },
+        "targetWeightKg": { "type": "number", "description": "Goal weight in kilograms" },
+        "activityLevel": { "type": "string", "enum": ["sedentary", "light", "moderate", "active", "athlete"] },
+        "goalType": { "type": "string", "enum": ["lose", "maintain", "gain", "recomp"] },
+        "dietaryPreference": { "type": "string", "description": "Dietary style preference" },
+        "dailyCalorieGoal": { "type": "integer", "description": "Daily target calories (kcal)" },
+        "dailyProteinGrams": { "type": "integer", "description": "Daily target protein in grams" },
+        "dailyCarbsGrams": { "type": "integer", "description": "Daily target carbohydrates in grams" },
+        "dailyFatGrams": { "type": "integer", "description": "Daily target fat in grams" },
+        "dailyFiberGrams": { "type": "integer", "description": "Daily target fiber in grams" },
+        "dailyWaterMlGoal": { "type": "integer", "description": "Daily target water intake in milliliters" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "userId", "displayName", "age", "gender", "heightCm", "currentWeightKg",
+        "targetWeightKg", "activityLevel", "goalType", "dietaryPreference",
+        "dailyCalorieGoal", "dailyProteinGrams", "dailyCarbsGrams", "dailyFatGrams",
+        "dailyFiberGrams", "dailyWaterMlGoal", "createdAt", "updatedAt"
+      ]
+    },
+    "MealEntry": {
+      "title": "MealEntry",
+      "description": "Logged food or meal item with macronutrients, micronutrients, portion multiplier, and AI confidence score.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated user UID" },
+        "dateKey": { "type": "string", "description": "ISO date key YYYY-MM-DD" },
+        "mealType": { "type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"] },
+        "foodName": { "type": "string", "description": "Name of the logged meal or food" },
+        "portionDescription": { "type": "string", "description": "Human-readable portion size" },
+        "portionMultiplier": { "type": "number", "description": "Multiplier applied to base portion" },
+        "calories": { "type": "integer", "description": "Total kilocalories" },
+        "proteinGrams": { "type": "number", "description": "Protein in grams" },
+        "carbsGrams": { "type": "number", "description": "Carbohydrates in grams" },
+        "fatGrams": { "type": "number", "description": "Fat in grams" },
+        "fiberGrams": { "type": "number", "description": "Dietary fiber in grams" },
+        "sugarGrams": { "type": "number", "description": "Sugars in grams" },
+        "sodiumMg": { "type": "integer", "description": "Sodium in milligrams" },
+        "confidenceScore": { "type": "integer", "description": "AI nutritional estimation confidence (0-100)" },
+        "logMethod": { "type": "string", "enum": ["photo", "voice", "chat", "barcode", "manual"] },
+        "ingredientsSummary": { "type": "string", "description": "Comma-separated or structured ingredient breakdown" },
+        "aiNotes": { "type": "string", "description": "AI nutritionist insight and micronutrient highlights" },
+        "barcode": { "type": "string", "description": "Optional EAN/UPC barcode string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "userId", "dateKey", "mealType", "foodName", "portionDescription",
+        "portionMultiplier", "calories", "proteinGrams", "carbsGrams", "fatGrams",
+        "fiberGrams", "sugarGrams", "sodiumMg", "confidenceScore", "logMethod",
+        "ingredientsSummary", "aiNotes", "createdAt", "updatedAt"
+      ]
+    },
+    "WaterLog": {
+      "title": "WaterLog",
+      "description": "Hydration entry logged by the user for a specific day.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated user UID" },
+        "dateKey": { "type": "string", "description": "ISO date key YYYY-MM-DD" },
+        "amountMl": { "type": "integer", "description": "Fluid volume in milliliters" },
+        "beverageType": { "type": "string", "enum": ["water", "sparkling", "tea", "electrolytes", "coffee"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "dateKey", "amountMl", "beverageType", "createdAt", "updatedAt"]
+    },
+    "WeightLog": {
+      "title": "WeightLog",
+      "description": "Body weight and body fat percentage check-in entry.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated user UID" },
+        "dateKey": { "type": "string", "description": "ISO date key YYYY-MM-DD" },
+        "weightKg": { "type": "number", "description": "Weight in kilograms" },
+        "bodyFatPct": { "type": "number", "description": "Body fat percentage (0 if not measured)" },
+        "note": { "type": "string", "description": "Optional progress note" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "dateKey", "weightKg", "bodyFatPct", "note", "createdAt", "updatedAt"]
+    },
+    "MealPlanItem": {
+      "title": "MealPlanItem",
+      "description": "Personalized meal plan item and recipe with preparation steps and macros.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated user UID" },
+        "dayOfWeek": { "type": "string", "description": "Day label (e.g. Monday, Today)" },
+        "mealType": { "type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"] },
+        "title": { "type": "string", "description": "Recipe or meal title" },
+        "calories": { "type": "integer", "description": "Estimated calories" },
+        "proteinGrams": { "type": "integer", "description": "Protein in grams" },
+        "carbsGrams": { "type": "integer", "description": "Carbs in grams" },
+        "fatGrams": { "type": "integer", "description": "Fat in grams" },
+        "prepTimeMinutes": { "type": "integer", "description": "Preparation time in minutes" },
+        "ingredientsText": { "type": "string", "description": "Ingredients list with quantities" },
+        "instructionsText": { "type": "string", "description": "Step-by-step cooking instructions" },
+        "isCompleted": { "type": "boolean", "description": "Whether the planned meal was eaten/logged" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "userId", "dayOfWeek", "mealType", "title", "calories", "proteinGrams",
+        "carbsGrams", "fatGrams", "prepTimeMinutes", "ingredientsText",
+        "instructionsText", "isCompleted", "createdAt", "updatedAt"
+      ]
+    },
+    "GroceryItem": {
+      "title": "GroceryItem",
+      "description": "Shopping list item synced with meal plans and recipes.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated user UID" },
+        "name": { "type": "string", "description": "Grocery item name" },
+        "quantity": { "type": "string", "description": "Quantity and unit" },
+        "category": { "type": "string", "description": "Aisle category" },
+        "checked": { "type": "boolean", "description": "Whether purchased" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server creation timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server update timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "name", "quantity", "category", "checked", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Per-user nutrition profile and macro targets"
+    },
+    "/users/{userId}/meals/{mealId}": {
+      "schema": { "$ref": "#/entities/MealEntry" },
+      "description": "Per-user daily food diary and AI meal entries"
+    },
+    "/users/{userId}/water_logs/{logId}": {
+      "schema": { "$ref": "#/entities/WaterLog" },
+      "description": "Per-user hydration tracking entries"
+    },
+    "/users/{userId}/weight_logs/{logId}": {
+      "schema": { "$ref": "#/entities/WeightLog" },
+      "description": "Per-user weight and body fat progress logs"
+    },
+    "/users/{userId}/meal_plans/{planId}": {
+      "schema": { "$ref": "#/entities/MealPlanItem" },
+      "description": "Per-user AI-generated and custom meal plans and recipes"
+    },
+    "/users/{userId}/grocery_items/{itemId}": {
+      "schema": { "$ref": "#/entities/GroceryItem" },
+      "description": "Per-user grocery shopping checklist"
+    }
+  }
+}

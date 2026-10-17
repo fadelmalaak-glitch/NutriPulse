@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">NutriPulse</string>
+    <string name="tagline">AI Calorie Journal &amp; Personalized Nutrition Coach</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="nav_diary">Diary</string>
+    <string name="nav_ai_log">AI Log</string>
+    <string name="nav_coach">AI Coach</string>
+    <string name="nav_planner">Planner</string>
+    <string name="nav_analytics">Analytics</string>
+</resources>

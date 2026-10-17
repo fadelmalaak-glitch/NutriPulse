@@ -1,0 +1,6 @@
+{
+  "name": "NutriPulse",
+  "description": "AI-powered calorie tracking, multimodal food journal, personalized nutrition coach, meal planner, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

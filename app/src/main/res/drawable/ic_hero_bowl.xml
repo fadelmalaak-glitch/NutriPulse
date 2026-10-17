@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <!-- Rich editorial botanical background card illustration -->
+    <path android:pathData="M0,0h320v180h-320z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="0"
+                android:startY="0"
+                android:endX="320"
+                android:endY="180"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#062E26" />
+                <item android:offset="0.6" android:color="#0E4E40" />
+                <item android:offset="1.0" android:color="#115E59" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- Decorative concentric macro rings on right -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M240,90 m-64,0 a64,64 0 1,0 128,0 a64,64 0 1,0 -128,0"
+        android:strokeWidth="8"
+        android:strokeColor="#2234D399" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M240,90 m-46,0 a46,46 0 1,0 92,0 a46,46 0 1,0 -92,0"
+        android:strokeWidth="6"
+        android:strokeColor="#44FBBF24" />
+    <path
+        android:fillColor="#1A10B981"
+        android:pathData="M240,90 m-32,0 a32,32 0 1,0 64,0 a32,32 0 1,0 -64,0" />
+    <!-- Stylized Nutrition Bowl & Leaf -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M214,92 C214,110 266,110 266,92 Z" />
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M248,66 L251,74 L259,77 L251,80 L248,88 L245,80 L237,77 L245,74 Z" />
+</vector>

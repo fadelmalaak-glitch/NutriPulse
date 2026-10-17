@@ -1,0 +1,346 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 4.1: Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isNumberInRange(val, minVal, maxVal) {
+      return (val is int || val is float) && val >= minVal && val <= maxVal;
+    }
+
+    // 1. UserProfile Validation Blueprint
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+             data.age is int && data.age >= 13 && data.age <= 120 &&
+             data.gender is string && (data.gender == 'male' || data.gender == 'female' || data.gender == 'other') &&
+             isNumberInRange(data.heightCm, 100, 250) &&
+             isNumberInRange(data.currentWeightKg, 25, 350) &&
+             isNumberInRange(data.targetWeightKg, 25, 350) &&
+             data.activityLevel is string && (data.activityLevel == 'sedentary' || data.activityLevel == 'light' || data.activityLevel == 'moderate' || data.activityLevel == 'active' || data.activityLevel == 'athlete') &&
+             data.goalType is string && (data.goalType == 'lose' || data.goalType == 'maintain' || data.goalType == 'gain' || data.goalType == 'recomp') &&
+             data.dietaryPreference is string && data.dietaryPreference.size() >= 1 && data.dietaryPreference.size() <= 60 &&
+             data.dailyCalorieGoal is int && data.dailyCalorieGoal >= 800 && data.dailyCalorieGoal <= 10000 &&
+             data.dailyProteinGrams is int && data.dailyProteinGrams >= 20 && data.dailyProteinGrams <= 600 &&
+             data.dailyCarbsGrams is int && data.dailyCarbsGrams >= 10 && data.dailyCarbsGrams <= 1200 &&
+             data.dailyFatGrams is int && data.dailyFatGrams >= 15 && data.dailyFatGrams <= 400 &&
+             data.dailyFiberGrams is int && data.dailyFiberGrams >= 10 && data.dailyFiberGrams <= 100 &&
+             data.dailyWaterMlGoal is int && data.dailyWaterMlGoal >= 500 && data.dailyWaterMlGoal <= 10000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 2. MealEntry Validation Blueprint
+    function isValidMealEntry(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.dateKey is string && data.dateKey.size() == 10 && data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+             data.mealType is string && (data.mealType == 'breakfast' || data.mealType == 'lunch' || data.mealType == 'dinner' || data.mealType == 'snack') &&
+             data.foodName is string && data.foodName.size() >= 1 && data.foodName.size() <= 150 &&
+             data.portionDescription is string && data.portionDescription.size() >= 1 && data.portionDescription.size() <= 120 &&
+             isNumberInRange(data.portionMultiplier, 0.1, 20.0) &&
+             data.calories is int && data.calories >= 0 && data.calories <= 15000 &&
+             isNumberInRange(data.proteinGrams, 0, 1000) &&
+             isNumberInRange(data.carbsGrams, 0, 2000) &&
+             isNumberInRange(data.fatGrams, 0, 1000) &&
+             isNumberInRange(data.fiberGrams, 0, 300) &&
+             isNumberInRange(data.sugarGrams, 0, 1000) &&
+             data.sodiumMg is int && data.sodiumMg >= 0 && data.sodiumMg <= 50000 &&
+             data.confidenceScore is int && data.confidenceScore >= 0 && data.confidenceScore <= 100 &&
+             data.logMethod is string && (data.logMethod == 'photo' || data.logMethod == 'voice' || data.logMethod == 'chat' || data.logMethod == 'barcode' || data.logMethod == 'manual') &&
+             data.ingredientsSummary is string && data.ingredientsSummary.size() <= 500 &&
+             data.aiNotes is string && data.aiNotes.size() <= 500 &&
+             (!('barcode' in data) || data.barcode == null || (data.barcode is string && data.barcode.size() <= 64)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 3. WaterLog Validation Blueprint
+    function isValidWaterLog(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.dateKey is string && data.dateKey.size() == 10 && data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+             data.amountMl is int && data.amountMl >= 1 && data.amountMl <= 5000 &&
+             data.beverageType is string && (data.beverageType == 'water' || data.beverageType == 'sparkling' || data.beverageType == 'tea' || data.beverageType == 'electrolytes' || data.beverageType == 'coffee') &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 4. WeightLog Validation Blueprint
+    function isValidWeightLog(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.dateKey is string && data.dateKey.size() == 10 && data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+             isNumberInRange(data.weightKg, 25, 350) &&
+             isNumberInRange(data.bodyFatPct, 0, 75) &&
+             data.note is string && data.note.size() <= 200 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 5. MealPlanItem Validation Blueprint
+    function isValidMealPlanItem(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.dayOfWeek is string && data.dayOfWeek.size() >= 1 && data.dayOfWeek.size() <= 20 &&
+             data.mealType is string && (data.mealType == 'breakfast' || data.mealType == 'lunch' || data.mealType == 'dinner' || data.mealType == 'snack') &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 150 &&
+             data.calories is int && data.calories >= 0 && data.calories <= 5000 &&
+             data.proteinGrams is int && data.proteinGrams >= 0 && data.proteinGrams <= 500 &&
+             data.carbsGrams is int && data.carbsGrams >= 0 && data.carbsGrams <= 1000 &&
+             data.fatGrams is int && data.fatGrams >= 0 && data.fatGrams <= 500 &&
+             data.prepTimeMinutes is int && data.prepTimeMinutes >= 0 && data.prepTimeMinutes <= 600 &&
+             data.ingredientsText is string && data.ingredientsText.size() >= 1 && data.ingredientsText.size() <= 1000 &&
+             data.instructionsText is string && data.instructionsText.size() >= 1 && data.instructionsText.size() <= 2000 &&
+             data.isCompleted is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // 6. GroceryItem Validation Blueprint
+    function isValidGroceryItem(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.quantity is string && data.quantity.size() >= 1 && data.quantity.size() <= 60 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 40 &&
+             data.checked is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'age', 'gender', 'heightCm',
+                         'currentWeightKg', 'targetWeightKg', 'activityLevel',
+                         'goalType', 'dietaryPreference', 'dailyCalorieGoal',
+                         'dailyProteinGrams', 'dailyCarbsGrams', 'dailyFatGrams',
+                         'dailyFiberGrams', 'dailyWaterMlGoal', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'age', 'gender', 'heightCm',
+                         'currentWeightKg', 'targetWeightKg', 'activityLevel',
+                         'goalType', 'dietaryPreference', 'dailyCalorieGoal',
+                         'dailyProteinGrams', 'dailyCarbsGrams', 'dailyFatGrams',
+                         'dailyFiberGrams', 'dailyWaterMlGoal', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidUserProfile(incoming()) &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       existing().userId == request.auth.uid &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'age', 'gender', 'heightCm',
+                         'currentWeightKg', 'targetWeightKg', 'activityLevel',
+                         'goalType', 'dietaryPreference', 'dailyCalorieGoal',
+                         'dailyProteinGrams', 'dailyCarbsGrams', 'dailyFatGrams',
+                         'dailyFiberGrams', 'dailyWaterMlGoal', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+      match /meals/{mealId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(mealId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(mealId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'dateKey', 'mealType', 'foodName', 'portionDescription',
+                           'portionMultiplier', 'calories', 'proteinGrams', 'carbsGrams',
+                           'fatGrams', 'fiberGrams', 'sugarGrams', 'sodiumMg',
+                           'confidenceScore', 'logMethod', 'ingredientsSummary', 'aiNotes',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'dateKey', 'mealType', 'foodName', 'portionDescription',
+                           'portionMultiplier', 'calories', 'proteinGrams', 'carbsGrams',
+                           'fatGrams', 'fiberGrams', 'sugarGrams', 'sodiumMg',
+                           'confidenceScore', 'logMethod', 'ingredientsSummary', 'aiNotes',
+                           'barcode', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidMealEntry(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidMealEntry(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(mealId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'dateKey', 'mealType', 'foodName', 'portionDescription',
+                           'portionMultiplier', 'calories', 'proteinGrams', 'carbsGrams',
+                           'fatGrams', 'fiberGrams', 'sugarGrams', 'sodiumMg',
+                           'confidenceScore', 'logMethod', 'ingredientsSummary', 'aiNotes',
+                           'barcode', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(mealId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+
+      match /water_logs/{logId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(logId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(logId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'dateKey', 'amountMl', 'beverageType', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'dateKey', 'amountMl', 'beverageType', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidWaterLog(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidWaterLog(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(logId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'dateKey', 'amountMl', 'beverageType', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(logId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+
+      match /weight_logs/{logId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(logId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(logId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'dateKey', 'weightKg', 'bodyFatPct', 'note', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'dateKey', 'weightKg', 'bodyFatPct', 'note', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidWeightLog(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidWeightLog(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(logId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'dateKey', 'weightKg', 'bodyFatPct', 'note', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(logId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+
+      match /meal_plans/{planId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(planId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(planId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'dayOfWeek', 'mealType', 'title', 'calories',
+                           'proteinGrams', 'carbsGrams', 'fatGrams', 'prepTimeMinutes',
+                           'ingredientsText', 'instructionsText', 'isCompleted',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'dayOfWeek', 'mealType', 'title', 'calories',
+                           'proteinGrams', 'carbsGrams', 'fatGrams', 'prepTimeMinutes',
+                           'ingredientsText', 'instructionsText', 'isCompleted',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidMealPlanItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidMealPlanItem(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(planId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'dayOfWeek', 'mealType', 'title', 'calories',
+                           'proteinGrams', 'carbsGrams', 'fatGrams', 'prepTimeMinutes',
+                           'ingredientsText', 'instructionsText', 'isCompleted', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(planId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+
+      match /grocery_items/{itemId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(itemId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+        allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+        allow create: if isSignedIn() &&
+                         isValidId(userId) &&
+                         isValidId(itemId) &&
+                         request.auth.uid == userId &&
+                         incoming().keys().hasAll([
+                           'userId', 'name', 'quantity', 'category', 'checked', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'name', 'quantity', 'category', 'checked', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidGroceryItem(incoming());
+
+        allow update: if isSignedIn() &&
+                         isValidGroceryItem(incoming()) &&
+                         isValidId(userId) &&
+                         isValidId(itemId) &&
+                         request.auth.uid == userId &&
+                         existing().userId == request.auth.uid &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'quantity', 'category', 'checked', 'updatedAt'
+                         ]);
+
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(itemId) && request.auth.uid == userId && existing().userId == request.auth.uid;
+      }
+    }
+  }
+}

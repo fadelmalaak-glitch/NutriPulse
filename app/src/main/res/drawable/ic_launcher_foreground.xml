@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Macro Ring -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,28 A26,26 0 1,1 28,54"
+        android:strokeWidth="5.5"
+        android:strokeColor="#34D399"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M28,54 A26,26 0 0,1 54,28"
+        android:strokeWidth="5.5"
+        android:strokeColor="#FBBF24"
+        android:strokeLineCap="round" />
+    <!-- Bold Organic Leaf Silhouette inside safe zone -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M65,37 C50,37 39,48 39,63 C39,65.5 39.5,67.8 40.3,70 C47,63 54,55 62,48 C55,56 48,64 43,71.8 C45.2,72.5 47.5,73 50,73 C65,73 73,60 65,37 Z" />
+    <!-- AI Spark Star in top right of safe zone -->
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M68,26 L70.2,31.8 L76,34 L70.2,36.2 L68,42 L65.8,36.2 L60,34 L65.8,31.8 Z" />
+</vector>
