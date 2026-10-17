@@ -1,1 +1,80 @@
+name: Build Android APK
 
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android build tools
+        run: sdkmanager "platforms;android-36.1" "build-tools;36.0.0"
+
+      # The export contains wrapper properties but no gradlew or wrapper JAR.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      # Keep the app's existing AI Studio signing configuration intact.
+      - name: Create CI debug signing key
+        run: |
+          keytool -genkeypair -noprompt -keystore debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA -keysize 2048 -validity 10000
+
+      - name: Configure Firebase when available
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
+          elif [ ! -f app/google-services.json ]; then
+            echo "::warning::GOOGLE_SERVICES_JSON is not configured. The APK can build, but Firebase features require your Firebase Android configuration."
+          fi
+
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace --console=plain
+
+      - name: Upload installable APK
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: NutriPulse-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Add download instructions
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          echo "### NutriPulse debug APK" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Download APK artifact]($ARTIFACT_URL)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Extract the ZIP and install app-debug.apk. This is a debug build for testing, not a Play Store release." >> "$GITHUB_STEP_SUMMARY"
